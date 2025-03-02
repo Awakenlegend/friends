@@ -1,14 +1,28 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import AuthPage from '@/components/auth/AuthPage';
+import { useAuth } from '@/context/AuthContext';
 
 const Index = () => {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
+  const { isAuthenticated, isLoading } = useAuth();
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    if (isAuthenticated && !isLoading) {
+      navigate('/feed');
+    }
+  }, [isAuthenticated, isLoading, navigate]);
+  
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-pulse text-primary font-semibold">Loading...</div>
       </div>
-    </div>
-  );
+    );
+  }
+  
+  return <AuthPage />;
 };
 
 export default Index;
