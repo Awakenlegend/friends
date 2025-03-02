@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, AuthContextType } from '../types';
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 // Mock users for the closed platform
 const mockUsers: User[] = [
@@ -44,6 +45,47 @@ const mockUsers: User[] = [
     birthdate: '1996-05-17',
     profilePicture: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=200&auto=format&fit=crop',
     bio: 'Tech enthusiast and gamer',
+  },
+  // New users from Jugaad Junction
+  {
+    id: '6',
+    name: 'Shahul A',
+    email: 'ashahulbtech23@ced.alliance.edu.in',
+    birthdate: '2000-01-01',
+    profilePicture: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=200&auto=format&fit=crop',
+    bio: 'Engineering student at Alliance University',
+  },
+  {
+    id: '7',
+    name: 'Mohammed F',
+    email: 'fmohammedbtech23@ced.alliance.edu.in',
+    birthdate: '2000-01-01',
+    profilePicture: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop',
+    bio: 'Engineering student at Alliance University',
+  },
+  {
+    id: '8',
+    name: 'Chandru U',
+    email: 'uchandrubtech23@ced.alliance.edu.in',
+    birthdate: '2000-01-01',
+    profilePicture: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=200&auto=format&fit=crop',
+    bio: 'Engineering student at Alliance University',
+  },
+  {
+    id: '9',
+    name: 'Akash R',
+    email: 'akashrbtech23@ced.alliance.edu.in',
+    birthdate: '2000-01-01',
+    profilePicture: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop',
+    bio: 'Engineering student at Alliance University',
+  },
+  {
+    id: '10',
+    name: 'Rohith Y',
+    email: 'yrohithbtech23@ced.alliance.edu.in',
+    birthdate: '2000-01-01',
+    profilePicture: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=200&auto=format&fit=crop',
+    bio: 'Engineering student at Alliance University',
   },
 ];
 

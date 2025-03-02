@@ -119,15 +119,27 @@ const AuthPage: React.FC = () => {
                 
                 {showHint && (
                   <div className="mt-2 p-3 bg-muted rounded-md text-sm animate-fade-in">
-                    <p>This is a closed platform for 5 friends only.</p>
+                    <p>This is a closed platform for Jugaad Junction team and demo users.</p>
                     <p className="mt-1">Try one of these emails:</p>
-                    <ul className="mt-1 space-y-1 text-left pl-4">
-                      <li>alex@example.com</li>
-                      <li>taylor@example.com</li>
-                      <li>jordan@example.com</li>
-                      <li>casey@example.com</li>
-                      <li>riley@example.com</li>
-                    </ul>
+                    <div className="mt-1 space-y-1 text-left pl-4">
+                      <p className="font-semibold mt-2">Demo emails:</p>
+                      <ul className="space-y-1">
+                        <li>alex@example.com</li>
+                        <li>taylor@example.com</li>
+                        <li>jordan@example.com</li>
+                        <li>casey@example.com</li>
+                        <li>riley@example.com</li>
+                      </ul>
+                      
+                      <p className="font-semibold mt-2">Alliance University emails:</p>
+                      <ul className="space-y-1">
+                        <li>ashahulbtech23@ced.alliance.edu.in</li>
+                        <li>fmohammedbtech23@ced.alliance.edu.in</li>
+                        <li>uchandrubtech23@ced.alliance.edu.in</li>
+                        <li>akashrbtech23@ced.alliance.edu.in</li>
+                        <li>yrohithbtech23@ced.alliance.edu.in</li>
+                      </ul>
+                    </div>
                   </div>
                 )}
               </div>
