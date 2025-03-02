@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/context/AuthContext';
@@ -8,27 +8,107 @@ import MediaCard from '@/components/ui/MediaCard';
 import UserAvatar from '@/components/ui/UserAvatar';
 import { formatBirthdate } from '@/utils/media';
 import { CalendarDays, Video, Image, Clock } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const Profile = () => {
   const { userId } = useParams<{ userId: string }>();
-  const { users } = useAuth();
+  const { user } = useAuth();
   const { getMediasByUser } = useMedia();
+  const [profileData, setProfileData] = useState<any>(null);
+  const [userMedias, setUserMedias] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   
-  const user = users.find(u => u.id === userId);
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch profile data
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .single();
+          
+        if (profileError) {
+          console.error('Error fetching profile:', profileError);
+          toast.error('Failed to load profile data');
+          return;
+        }
+        
+        // Fetch user's posts
+        const { data: posts, error: postsError } = await supabase
+          .from('posts')
+          .select('*')
+          .eq('user_id', userId);
+          
+        if (postsError) {
+          console.error('Error fetching posts:', postsError);
+          toast.error('Failed to load media data');
+          return;
+        }
+        
+        setProfileData(profile);
+        setUserMedias(posts || []);
+      } catch (error) {
+        console.error('Error:', error);
+        toast.error('Something went wrong');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    if (userId) {
+      fetchProfileData();
+    }
+  }, [userId]);
   
-  if (!user) {
+  if (loading) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center h-64">
+          <p className="text-muted-foreground">Loading profile...</p>
+        </div>
+      </MainLayout>
+    );
+  }
+  
+  if (!profileData && !loading) {
     return <Navigate to="/feed" />;
   }
   
-  const userMedias = getMediasByUser(user.id);
-  const sortedMedias = [...userMedias].sort((a, b) => 
+  // Map supabase data format to app's expected format
+  const mappedUser = {
+    id: profileData.id,
+    name: profileData.name,
+    email: profileData.email,
+    birthdate: profileData.dob,
+    profilePicture: profileData.profile_pic,
+    bio: profileData.bio || ''
+  };
+  
+  const mappedMedias = userMedias.map(media => ({
+    id: media.id,
+    title: media.title,
+    description: media.description || '',
+    url: media.media_url,
+    thumbnailUrl: media.media_type === 'video' ? media.media_url : undefined,
+    type: media.media_type,
+    userId: media.user_id,
+    createdAt: media.created_at,
+    likes: 0, // We'll need to fetch this separately
+    hasLiked: false
+  }));
+  
+  const sortedMedias = [...mappedMedias].sort((a, b) => 
     new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
   
-  const videosCount = userMedias.filter(m => m.type === 'video').length;
-  const imagesCount = userMedias.filter(m => m.type === 'image').length;
+  const videosCount = mappedMedias.filter(m => m.type === 'video').length;
+  const imagesCount = mappedMedias.filter(m => m.type === 'image').length;
   
-  const joinedDate = '2023'; // In a real app, we would store this in the user object
+  const joinedDate = new Date(profileData.created_at).getFullYear().toString();
   
   return (
     <MainLayout>
@@ -36,19 +116,19 @@ const Profile = () => {
         <div className="bg-gradient-to-b from-primary/10 to-background/0 py-12">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-              <UserAvatar user={user} size="lg" className="h-24 w-24 sm:h-32 sm:w-32" />
+              <UserAvatar user={mappedUser} size="lg" className="h-24 w-24 sm:h-32 sm:w-32" />
               
               <div className="text-center sm:text-left">
-                <h1 className="text-3xl font-bold">{user.name}</h1>
-                {user.bio && (
-                  <p className="mt-2 text-muted-foreground max-w-lg">{user.bio}</p>
+                <h1 className="text-3xl font-bold">{mappedUser.name}</h1>
+                {mappedUser.bio && (
+                  <p className="mt-2 text-muted-foreground max-w-lg">{mappedUser.bio}</p>
                 )}
                 
                 <div className="flex flex-wrap justify-center sm:justify-start gap-4 mt-4">
-                  {user.birthdate && (
+                  {mappedUser.birthdate && (
                     <div className="flex items-center text-sm text-muted-foreground">
                       <CalendarDays size={16} className="mr-1" />
-                      <span>Born {formatBirthdate(user.birthdate)}</span>
+                      <span>Born {formatBirthdate(mappedUser.birthdate)}</span>
                     </div>
                   )}
                   
@@ -74,7 +154,7 @@ const Profile = () => {
         
         <div className="page-container pt-6">
           <h2 className="text-2xl font-semibold mb-6">
-            {user.name}'s Media
+            {mappedUser.name}'s Media
           </h2>
           
           {sortedMedias.length === 0 ? (
