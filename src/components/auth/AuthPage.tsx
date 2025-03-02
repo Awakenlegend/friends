@@ -1,28 +1,39 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Mail } from 'lucide-react';
+import { toast } from 'sonner';
 
 const AuthPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showHint, setShowHint] = useState(false);
-  const { login, isLoading } = useAuth();
+  const { login, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
+  
+  useEffect(() => {
+    if (isAuthenticated && !isLoading) {
+      navigate('/feed');
+    }
+  }, [isAuthenticated, isLoading, navigate]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) return;
+    if (!email.trim()) {
+      toast.error("Please enter an email address");
+      return;
+    }
     
     setIsSubmitting(true);
     try {
       await login(email);
-      navigate('/feed');
+      // Navigate is handled by the useEffect
     } catch (error) {
       console.error('Login error:', error);
+      toast.error("Login failed. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -94,7 +105,7 @@ const AuthPage: React.FC = () => {
                 disabled={!email.trim() || isLoading || isSubmitting}
               >
                 <Mail className="mr-2 h-4 w-4" />
-                Sign In with Email
+                {isSubmitting ? "Signing In..." : "Sign In with Email"}
               </Button>
               
               <div className="text-center mt-4">

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -14,8 +14,13 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   
+  useEffect(() => {
+    if (!user) {
+      navigate('/', { replace: true });
+    }
+  }, [user, navigate]);
+  
   if (!user) {
-    navigate('/', { replace: true });
     return null;
   }
   
