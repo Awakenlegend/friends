@@ -132,6 +132,93 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     toast.success("You've been logged out successfully.");
   };
 
+  const updateProfile = async (profileData: Partial<User>) => {
+    if (!user) {
+      toast.error("You must be logged in to update your profile");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // Update in Supabase
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          name: profileData.name,
+          bio: profileData.bio,
+          dob: profileData.birthdate,
+          profile_pic: profileData.profilePicture
+        })
+        .eq('id', user.id);
+
+      if (error) {
+        console.error("Profile update error:", error);
+        toast.error("Failed to update profile. Please try again.");
+        return;
+      }
+
+      // Update local user state
+      const updatedUser = { ...user, ...profileData };
+      setUser(updatedUser);
+      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+      
+      toast.success("Profile updated successfully!");
+    } catch (error) {
+      console.error("Profile update error:", error);
+      toast.error("An error occurred while updating your profile.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const uploadProfilePicture = async (file: File) => {
+    if (!user) {
+      toast.error("You must be logged in to upload a profile picture");
+      return null;
+    }
+
+    setIsLoading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const filePath = `profile-pictures/${user.id}.${fileExt}`;
+
+      // Upload to Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('user-uploads')
+        .upload(filePath, file, {
+          upsert: true,
+          contentType: file.type
+        });
+
+      if (error) {
+        console.error("Upload error:", error);
+        toast.error("Failed to upload profile picture. Please try again.");
+        return null;
+      }
+
+      // Get public URL
+      const { data: urlData } = await supabase.storage
+        .from('user-uploads')
+        .getPublicUrl(filePath);
+
+      if (!urlData?.publicUrl) {
+        toast.error("Failed to get profile picture URL");
+        return null;
+      }
+
+      // Update user profile with new picture URL
+      await updateProfile({ profilePicture: urlData.publicUrl });
+      
+      return urlData.publicUrl;
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast.error("An error occurred while uploading your profile picture.");
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -139,7 +226,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isLoading,
       login,
       logout,
-      users: mockUsers
+      users: mockUsers,
+      updateProfile,
+      uploadProfilePicture
     }}>
       {children}
     </AuthContext.Provider>

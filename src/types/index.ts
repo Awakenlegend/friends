@@ -38,6 +38,8 @@ export interface AuthContextType {
   login: (email: string) => Promise<void>;
   logout: () => void;
   users: User[];
+  updateProfile: (profileData: Partial<User>) => Promise<void>;
+  uploadProfilePicture: (file: File) => Promise<string | null>;
 }
 
 export interface MediaContextType {
