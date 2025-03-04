@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, Navigate, Link } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
@@ -14,7 +15,7 @@ import { toast } from 'sonner';
 const Profile = () => {
   const { userId } = useParams<{ userId: string }>();
   const { user, users } = useAuth();
-  const { getMediasByUser } = useMedia();
+  const { medias, getMediasByUser } = useMedia();
   const [profileData, setProfileData] = useState<any>(null);
   const [userMedias, setUserMedias] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,22 +40,19 @@ const Profile = () => {
             created_at: new Date().toISOString()
           });
           
-          // Get user's posts if we have real Supabase posts
-          try {
-            const { data: posts, error: postsError } = await supabase
-              .from('posts')
-              .select('*')
-              .eq('user_id', userId);
-              
-            if (postsError) {
-              console.error('Error fetching posts:', postsError);
-              toast.error('Failed to load media data');
-            } else {
-              setUserMedias(posts || []);
-            }
-          } catch (err) {
-            console.error('Posts error:', err);
-          }
+          // For mock users, use the mock media data
+          const userMedia = getMediasByUser(userId);
+          setUserMedias(userMedia.map(media => ({
+            id: media.id,
+            title: media.title,
+            description: media.description || '',
+            media_url: media.url,
+            media_type: media.type,
+            user_id: media.userId,
+            created_at: media.createdAt,
+            likes: media.likes,
+            hasLiked: media.hasLiked
+          })));
           
           setLoading(false);
           return;
@@ -62,6 +60,16 @@ const Profile = () => {
         
         // If not using mock data, fetch from Supabase
         console.log('Fetching profile for user ID:', userId);
+        
+        // Check if userId is a valid UUID before querying
+        const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId || '');
+        
+        if (!isValidUUID) {
+          console.error('Invalid UUID format for user ID:', userId);
+          toast.error('Invalid user ID format');
+          setLoading(false);
+          return;
+        }
         
         // Fetch profile data
         const { data: profile, error: profileError } = await supabase
@@ -101,7 +109,7 @@ const Profile = () => {
     if (userId) {
       fetchProfileData();
     }
-  }, [userId, users]);
+  }, [userId, users, getMediasByUser]);
   
   if (loading) {
     return (
@@ -131,13 +139,13 @@ const Profile = () => {
     id: media.id,
     title: media.title,
     description: media.description || '',
-    url: media.media_url,
-    thumbnailUrl: media.media_type === 'video' ? media.media_url : undefined,
-    type: media.media_type,
-    userId: media.user_id,
-    createdAt: media.created_at,
-    likes: 0, // We'll need to fetch this separately
-    hasLiked: false
+    url: media.media_url || media.url,
+    thumbnailUrl: media.media_type === 'video' ? (media.media_url || media.url) : undefined,
+    type: media.media_type || media.type,
+    userId: media.user_id || media.userId,
+    createdAt: media.created_at || media.createdAt,
+    likes: media.likes || 0,
+    hasLiked: media.hasLiked || false
   }));
   
   const sortedMedias = [...mappedMedias].sort((a, b) => 
