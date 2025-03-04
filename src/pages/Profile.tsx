@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, Navigate, Link } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
@@ -14,7 +13,7 @@ import { toast } from 'sonner';
 
 const Profile = () => {
   const { userId } = useParams<{ userId: string }>();
-  const { user } = useAuth();
+  const { user, users } = useAuth();
   const { getMediasByUser } = useMedia();
   const [profileData, setProfileData] = useState<any>(null);
   const [userMedias, setUserMedias] = useState<any[]>([]);
@@ -27,6 +26,43 @@ const Profile = () => {
       try {
         setLoading(true);
         
+        // Check if we're using mock data from AuthContext
+        const mockUser = users.find(u => u.id === userId);
+        if (mockUser) {
+          setProfileData({
+            id: mockUser.id,
+            name: mockUser.name,
+            email: mockUser.email,
+            dob: mockUser.birthdate,
+            profile_pic: mockUser.profilePicture,
+            bio: mockUser.bio || '',
+            created_at: new Date().toISOString()
+          });
+          
+          // Get user's posts if we have real Supabase posts
+          try {
+            const { data: posts, error: postsError } = await supabase
+              .from('posts')
+              .select('*')
+              .eq('user_id', userId);
+              
+            if (postsError) {
+              console.error('Error fetching posts:', postsError);
+              toast.error('Failed to load media data');
+            } else {
+              setUserMedias(posts || []);
+            }
+          } catch (err) {
+            console.error('Posts error:', err);
+          }
+          
+          setLoading(false);
+          return;
+        }
+        
+        // If not using mock data, fetch from Supabase
+        console.log('Fetching profile for user ID:', userId);
+        
         // Fetch profile data
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
@@ -37,6 +73,7 @@ const Profile = () => {
         if (profileError) {
           console.error('Error fetching profile:', profileError);
           toast.error('Failed to load profile data');
+          setLoading(false);
           return;
         }
         
@@ -49,7 +86,6 @@ const Profile = () => {
         if (postsError) {
           console.error('Error fetching posts:', postsError);
           toast.error('Failed to load media data');
-          return;
         }
         
         setProfileData(profile);
@@ -65,7 +101,7 @@ const Profile = () => {
     if (userId) {
       fetchProfileData();
     }
-  }, [userId]);
+  }, [userId, users]);
   
   if (loading) {
     return (
@@ -111,7 +147,9 @@ const Profile = () => {
   const videosCount = mappedMedias.filter(m => m.type === 'video').length;
   const imagesCount = mappedMedias.filter(m => m.type === 'image').length;
   
-  const joinedDate = new Date(profileData.created_at).getFullYear().toString();
+  const joinedDate = profileData.created_at 
+    ? new Date(profileData.created_at).getFullYear().toString()
+    : new Date().getFullYear().toString();
   
   return (
     <MainLayout>
