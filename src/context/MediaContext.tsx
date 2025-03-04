@@ -138,6 +138,20 @@ export const MediaProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const addMedia = (mediaData: Omit<Media, 'id' | 'createdAt' | 'likes' | 'hasLiked'>) => {
     if (!user) return;
     
+    // Check if the user is one of the five Alliance University friends
+    const allianceEmails = [
+      'ashahulbtech23@ced.alliance.edu.in',
+      'fmohammedbtech23@ced.alliance.edu.in',
+      'uchandrubtech23@ced.alliance.edu.in',
+      'akashrbtech23@ced.alliance.edu.in',
+      'yrohithbtech23@ced.alliance.edu.in'
+    ];
+    
+    if (!allianceEmails.includes(user.email)) {
+      toast.error("Only Alliance University users can upload media.");
+      return;
+    }
+    
     const newMedia: Media = {
       ...mediaData,
       id: `m${Date.now()}`,

@@ -1,5 +1,4 @@
-
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useMedia } from '@/context/MediaContext';
 import { useAuth } from '@/context/AuthContext';
@@ -10,7 +9,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { getMediaType, generateThumbnail } from '@/utils/media';
 import { toast } from "sonner";
-import { Camera, Upload as UploadIcon, X, Plus } from 'lucide-react';
+import { Camera, Upload as UploadIcon, X, Plus, AlertTriangle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const Upload = () => {
   const [title, setTitle] = useState('');
@@ -20,11 +20,26 @@ const Upload = () => {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [canUpload, setCanUpload] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const { addMedia } = useMedia();
   const { user } = useAuth();
   const navigate = useNavigate();
+  
+  useEffect(() => {
+    // Check if the current user is allowed to upload
+    if (user) {
+      const allianceEmails = [
+        'ashahulbtech23@ced.alliance.edu.in',
+        'fmohammedbtech23@ced.alliance.edu.in',
+        'uchandrubtech23@ced.alliance.edu.in',
+        'akashrbtech23@ced.alliance.edu.in',
+        'yrohithbtech23@ced.alliance.edu.in'
+      ];
+      setCanUpload(allianceEmails.includes(user.email));
+    }
+  }, [user]);
   
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -103,6 +118,11 @@ const Upload = () => {
       return;
     }
     
+    if (!canUpload) {
+      toast.error("Only Alliance University users can upload media.");
+      return;
+    }
+    
     setIsSubmitting(true);
     
     try {
@@ -145,6 +165,15 @@ const Upload = () => {
             Share your photos and videos with your friends
           </p>
         </div>
+        
+        {!canUpload && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              Only Alliance University users can upload media to this platform.
+            </AlertDescription>
+          </Alert>
+        )}
         
         <form onSubmit={handleSubmit} className="space-y-6">
           <div 
@@ -300,7 +329,7 @@ const Upload = () => {
             </Button>
             <Button 
               type="submit" 
-              disabled={!file || !title.trim() || isSubmitting}
+              disabled={!file || !title.trim() || isSubmitting || !canUpload}
               className="min-w-24"
             >
               {isSubmitting ? "Uploading..." : "Upload"}
