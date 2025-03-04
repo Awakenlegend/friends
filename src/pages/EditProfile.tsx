@@ -50,6 +50,7 @@ const EditProfile = () => {
       let pictureUrl = profilePicture;
       
       if (uploadedFile) {
+        toast.info("Uploading profile picture...");
         const uploadResult = await uploadProfilePicture(uploadedFile);
         if (uploadResult) {
           pictureUrl = uploadResult;

@@ -140,7 +140,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     setIsLoading(true);
     try {
-      // Update in Supabase
+      // Check if this is a mock user based on ID format
+      const isMockUser = /^\d+$/.test(user.id);
+      
+      if (isMockUser) {
+        // For mock users, just update the local state
+        const updatedUser = { ...user, ...profileData };
+        setUser(updatedUser);
+        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+        
+        // Update the mock users array
+        const updatedMockUsers = mockUsers.map(u => 
+          u.id === user.id ? { ...u, ...profileData } : u
+        );
+        
+        toast.success("Profile updated successfully!");
+        setIsLoading(false);
+        return;
+      }
+      
+      // Not a mock user, update in Supabase
       const { error } = await supabase
         .from('profiles')
         .update({
@@ -179,6 +198,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     setIsLoading(true);
     try {
+      // Check if this is a mock user based on ID format
+      const isMockUser = /^\d+$/.test(user.id);
+      
+      if (isMockUser) {
+        // For mock users, create a fake URL and just return it
+        // In a real application, you'd upload to a service and get a URL
+        const mockUrl = URL.createObjectURL(file);
+        toast.success("Profile picture updated!");
+        setIsLoading(false);
+        return mockUrl;
+      }
+      
+      // Not a mock user, upload to Supabase Storage
       const fileExt = file.name.split('.').pop();
       const filePath = `profile-pictures/${user.id}.${fileExt}`;
 
@@ -205,9 +237,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         toast.error("Failed to get profile picture URL");
         return null;
       }
-
-      // Update user profile with new picture URL
-      await updateProfile({ profilePicture: urlData.publicUrl });
       
       return urlData.publicUrl;
     } catch (error) {
